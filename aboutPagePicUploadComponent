@@ -1,0 +1,98 @@
+(function () {
+    'use strict';
+
+    angular.module(AppName).component("aboutPicUpload", {
+        bindings: {
+            completedCallbackFn: "<",
+            fileRepositoryIdRequest: "<",
+            api: "="
+        },
+        templateUrl: "/Scripts/components/views/aboutPicUpload.html",
+        controller: function (requestService, $scope, $window, $q) {
+            var vm = this;
+            vm.fileUploadModel = {};
+            vm.$onInit = _init;
+            vm.fileRepositoryIdRequest = "";
+            vm.myImage = '';
+            vm.myCroppedImage = '';
+            vm.cropBlob = '';
+            vm.handleFileSelect = _handleFileSelect;
+            vm.commit = _commit;
+            vm.reject = _reject;
+            vm.commitCrop = false;
+
+            function _handleFileSelect(evt) {
+                vm.file = evt.currentTarget.files[0];
+                var reader = new FileReader();
+                reader.onload = function (evt) {
+                    $scope.$apply(function () {
+                        vm.myImage = evt.target.result;
+                    });
+                };
+                reader.readAsDataURL(vm.file);
+            };
+
+            $scope.imgLoaded = function (elem) {
+                var file = elem.files[0];
+                vm.fileName = file;
+
+                if (file !== undefined) {
+                    var fileReader = new FileReader();
+                    fileReader.onload = function (f) {
+                        vm.data = f.target.result;
+                        $scope.$apply(function ($scope) {
+                            vm.uploadedFile = file;
+                        });
+                    };
+                    fileReader.readAsDataURL(file);
+                }
+            };
+
+            angular.element(document.querySelector('#fileInput')).on('change', _handleFileSelect);
+
+            function _init() {
+                vm.api = {};
+                vm.api.asyncUpLoad = asyncUpLoad;
+            }
+
+            function dataURItoBlob(dataURI) {
+                var arr = dataURI.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                    bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+                while (n--) {
+                    u8arr[n] = bstr.charCodeAt(n);
+                }
+                return new File([u8arr], vm.fileName, { type: mime });
+            }
+
+            function _commit() { 
+                vm.commitCrop = true; 
+            }
+
+            function _reject() {
+                vm.myCroppedImage = ''; 
+                vm.myImage = ''; 
+                vm.cropFileInput = null; 
+                vm.commitCrop = false; 
+            }
+
+            function asyncUpLoad() {
+                if (vm.myCroppedImage) {
+                    vm.blobImg = dataURItoBlob(vm.myCroppedImage);
+                }
+                return $q(function (resolve, reject) {
+                    requestService.UploadFile("/api/FileUpload", vm.blobImg, vm.fileRepositoryIdRequest)
+                        .then(function (response) {
+                            vm.uploadMessage = "File " + response.item + " was uploaded successfully.";
+                            resolve(response.item);
+                            vm.blobImg = {};
+                            _reject();
+                        })
+                        .catch(function (error) {
+                            vm.uploadMessage = "Failed to upload file. " + error.data;
+                            reject("Failed to Upload File - " + error);
+                        });
+                });
+            }
+        }
+    });
+})();
