@@ -1,0 +1,153 @@
+(function () {
+    "use strict";
+
+    angular.module(AppName).component("aboutPageManager", {
+        bindings: {},
+        templateUrl: "/scripts/components/views/aboutPageManagerView.html",
+        controller: function (requestService, $scope, $window) {
+            var vm = this;
+            vm.$onInit = _init;
+            vm.aboutModel = {};
+            vm.allAbouts = [];
+            vm.editAbout = _editAbout;
+            vm.postAbout = _postAbout;
+            vm.putAbout = _putAbout;
+            vm.deleteAbout = _deleteAbout;
+            vm.clearPic = _clearPic;
+
+            function _init() {
+                requestService.ApiRequestService("get", "/api/AboutPages")
+                    .then(function (response) {
+                        vm.allAbouts = [];
+                        vm.allAbouts = response.items;
+                    })
+                    .catch(function (err) {
+                        console.log(err);
+                    })
+            }
+
+            function _postAbout(form) {
+                vm.gridApi.asyncUpLoad()
+                    .then(function (responseAsyncUpload) {
+                        vm.fileName = responseAsyncUpload;
+                        vm.aboutModel.imageURL = vm.fileName;
+                        requestService.ApiRequestService("post", "/api/AboutPages", vm.aboutModel)
+                            .then(function (response) {
+                                form.$setPristine();
+                                form.$setUntouched();
+                                vm.aboutModel = {};
+                                swal({ title: "Congratulations!", text: "Successfully uploaded to the front page", timer: 2000, showConfirmButton: false, type: "success" });
+                                _init();
+                            })
+                            .catch(function (err) {
+                                swal("Opps!", "Something went wrong: " + err.data, "error");
+                            })
+                    })
+                    .catch(function (err) {
+                        swal("Opps!", "Something went wrong: " + err.data, "error");
+                    })
+            }
+
+            function _putAbout(form) {
+                if (vm.aboutModel.imageURL) {
+                    requestService.ApiRequestService("put", "/api/AboutPages/" + vm.aboutModel.id, vm.aboutModel)
+                        .then(function (response) {
+                            vm.aboutModel = {};
+                            form.$setPristine();
+                            form.$setUntouched();
+                            $scope.showUpdateBtn = false;
+                            $scope.hideSubmitBtn = false;
+                            $scope.showPicClearBtn = false;
+                            swal({ title: "Success!", text: "Successfully edited", timer: 2000, showConfirmButton: false, type: "success" });
+                            _init();
+                        })
+                        .catch(function (err) {
+                            swal("Opps!", "Something went wrong: " + err.data, "error");
+                        })
+                } else {
+                    vm.gridApi.asyncUpLoad()//if not it uploads a new pic
+                        .then(function (responseAsyncUpload) {
+                            vm.fileName = responseAsyncUpload;
+                            vm.aboutModel.imageURL = vm.fileName;
+
+                            requestService.ApiRequestService("put", "/api/AboutPages/" + vm.aboutModel.id, vm.aboutModel)
+                                .then(function (response) {
+                                    vm.aboutModel = {};
+                                    form.$setPristine();
+                                    form.$setUntouched();
+                                    $scope.showUpdateBtn = false;
+                                    $scope.hideSubmitBtn = false;
+                                    $scope.showPicClearBtn = false;
+                                    swal({ title: "Success!", text: "Successfully edited", timer: 2000, showConfirmButton: false, type: "success" });
+                                    _init();
+                                })
+                                .catch(function (err) {
+                                    swal("Opps!", "Something went wrong: " + err.data, "error");
+                                })
+                        })
+                        .catch(function (err) {
+                            swal("Opps!", "Something went wrong: " + err.data, "error");
+                        })
+                }
+
+            }
+
+            function _editAbout(item) {
+                vm.aboutModel = item; 
+                if (vm.aboutModel.imageURL) { 
+                    $scope.showUpdateBtn = true;
+                    $scope.hideSubmitBtn = true;
+                    $scope.showPicClearBtn = true;
+                } else { 
+                    $scope.showUpdateBtn = true;
+                    $scope.hideSubmitBtn = true;
+                }
+            }
+
+            function _deleteAbout(id) {
+                swal({
+                    title: "Are you sure you want to delete this feature?",
+                    type: "error",
+                    showCancelButton: true,
+                    confirmButtonColor: "#FF0000",
+                    confirmButtonText: "Okay",
+                    closeOnCancel: true,
+                    closeOnConfirm: true
+                },
+                    function (isConfirm) {
+                        if (isConfirm) {
+                            requestService.ApiRequestService("delete", "/api/AboutPages/" + id)
+                                .then(function (response) {
+                                    vm.aboutModel = {};
+                                    vm.allAbouts = [];
+                                    _init();
+                                })
+                                .catch(function (err) {
+                                    console.log(err);
+                                });
+                        }
+                    });
+            }
+
+            function _clearPic() {
+                swal({
+                    title: "Are you sure you want to clear this picture?",
+                    type: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#FFAA00",
+                    confirmButtonText: "Okay",
+                    closeOnCancel: true,
+                    closeOnConfirm: true
+                },
+                    function (isConfirm) {
+                        if (isConfirm) {
+                            $scope.$apply(function () {
+                                vm.aboutModel.imageURL = null;
+                                $scope.showPicClearBtn = false;
+                            })
+                        }
+                    });
+            }
+        }
+    })
+})();
