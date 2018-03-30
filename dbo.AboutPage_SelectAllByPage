@@ -1,0 +1,55 @@
+USE [LeaseHold]
+GO
+/****** Object:  StoredProcedure [dbo].[AboutPage_SelectAllByPage]    Script Date: 3/30/2018 4:16:14 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		Brian Fury Song
+-- Create date: 12/20/2017
+-- Description:	dbo.AboutPage_SelectAllByPage
+-- =============================================
+ALTER PROCEDURE [dbo].[AboutPage_SelectAllByPage]
+	
+	-- Add the parameters for the stored procedure here
+	@PageNumber int
+
+AS
+BEGIN
+		SET NOCOUNT ON;
+		Declare @BucketUrl nvarchar(255);
+		select @BucketUrl = ConfigValue from AppConfig where ConfigKey='AWSBucketUrl'
+
+	/*
+	==TEST CODE
+
+	DECLARE	@return_value int
+
+	EXEC	@return_value = [dbo].[AboutPage_SelectAllByPage]
+			@PageNumber = 2
+	
+	*/
+
+	DECLARE @totalAbouts int = (SELECT COUNT(*) FROM AboutPage)
+	DECLARE @PageQuantity int = (@totalAbouts/4)
+	IF (@totalAbouts%4 > 0) SET @PageQuantity = @PageQuantity + 1
+
+	SELECT [Id], [HeadLine], [ContentText], case 
+			when ImageURL is null then ''
+			else 
+			case when CHARINDEX('C45/', [ImageURL]) > 0 then [ImageURL] else
+			case when ImageURL = '' then ''
+					else concat (@BucketUrl,'C45/', [ImageURL]) 
+					end 
+			end 
+			end
+			as ImageURL, [CreatedById], [CreatedDate], [ModifiedById], [ModifiedDate], @PageQuantity as PageQuantity
+
+	FROM dbo.AboutPage order by CreatedDate asc
+
+	
+	OFFSET((@PageNumber - 1) * 4) ROWS
+	FETCH NEXT 4 ROWS ONLY
+
+END
