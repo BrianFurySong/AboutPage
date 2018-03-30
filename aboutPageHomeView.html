@@ -1,0 +1,49 @@
+<style>
+    /* Create three columns of equal width */
+    .columns {
+        width: 23%;
+        padding: 10px;
+    }
+
+    .fa {
+        opacity: .4;
+    }
+
+    .pageArrows {
+        margin-top: 5em;
+        cursor: pointer;
+    }
+
+        .pageArrows:hover {
+            color: black;
+        }
+
+    /*Change the width of the three columns to 100%
+    (to stack horizontally on small screens)*/
+    @media only screen and (max-width: 600px) {
+        .columns {
+            width: 100%;
+        }
+    }
+    /*Change the width of the three columns to 100%
+        (to stack horizontally on small screens)*/
+    @media only screen and (max-width: 600px) {
+        .columns {
+            width: 100%;
+        }
+    }
+</style>
+
+<div>
+    <i class="fa pageArrows fa-chevron-left fa-2x pull-left" ng-hide="$ctrl.pageNumber == 1" ng-disabled="$ctrl.pageNumber == 1" ng-click="$ctrl.pageOver($ctrl.pageNumber - 1)"></i>
+    <div style="margin-right: -60px;">
+        <div class="columns col-md-2" ng-repeat="item in $ctrl.allAbouts">
+            <center>
+                <h2>{{item.headLine}}</h2>
+                <img ng-src="{{item.imageURL}}" /><br /><br />
+                <p style="margin-left: 8%; margin-right: 5%;">{{item.contentText}}</p>
+            </center>
+        </div>
+    </div>
+    <i class="fa pageArrows fa-chevron-right fa-2x pull-right" ng-hide="$ctrl.pageQuantity == $ctrl.pageNumber" ng-disabled="$ctrl.pageQuantity == $ctrl.pageNumber" ng-click="$ctrl.pageOver($ctrl.pageNumber + 1)"></i>
+</div>
